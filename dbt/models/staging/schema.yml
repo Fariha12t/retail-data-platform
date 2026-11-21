@@ -1,0 +1,69 @@
+version: 2
+models:
+- name: stg_customers
+  description: Latest version of each customer, cleaned and typed.
+  columns:
+  - name: customer_id
+    tests: [unique, not_null]
+  - name: email
+    tests: [not_null]
+  - name: segment
+    tests:
+    - accepted_values:
+        arguments:
+          values: [consumer, premium, business]
+- name: stg_products
+  description: Latest version of each product from the CSV catalogue.
+  columns:
+  - name: product_id
+    tests: [unique, not_null]
+  - name: list_price
+    tests: [non_negative]
+  - name: unit_cost
+    tests: [non_negative]
+- name: stg_orders
+  description: Latest version of each order header.
+  columns:
+  - name: order_id
+    tests: [unique, not_null]
+  - name: status
+    tests:
+    - accepted_values:
+        arguments:
+          values: [placed, shipped, delivered, cancelled, returned]
+  - name: channel
+    tests:
+    - accepted_values:
+        arguments:
+          values: [organic, paid_search, social, email, affiliate]
+- name: stg_order_items
+  description: Order lines with gross / discount / net amounts.
+  columns:
+  - name: order_item_id
+    tests: [unique, not_null]
+  - name: quantity
+    tests: [non_negative]
+- name: stg_payments
+  description: Payment transactions (latest status per payment).
+  columns:
+  - name: payment_id
+    tests: [unique, not_null]
+  - name: status
+    tests:
+    - accepted_values:
+        arguments:
+          values: [captured, failed, refunded]
+  - name: amount
+    tests: [non_negative]
+- name: stg_inventory_snapshots
+  description: One row per product, warehouse and day.
+  tests:
+  - unique_combination_of_columns:
+      arguments:
+        combination_of_columns: [snapshot_date, product_id, warehouse]
+- name: stg_marketing_spend
+  description: One row per campaign and day; newest API pull wins.
+  tests:
+  - unique_combination_of_columns:
+      arguments:
+        combination_of_columns: [spend_date, channel, campaign]

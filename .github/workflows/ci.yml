@@ -1,0 +1,54 @@
+name: CI
+on:
+  push: {branches: [main]}
+  pull_request:
+
+jobs:
+  lint-and-unit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: {python-version: "3.11", cache: pip}
+      - run: pip install -r requirements-dev.txt
+      - run: ruff check .
+      - run: pytest -q
+      - name: DAGs are valid Python
+        run: python -m py_compile airflow/dags/*.py
+
+  pipeline-integration:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env: {POSTGRES_USER: warehouse, POSTGRES_PASSWORD: warehouse, POSTGRES_DB: warehouse}
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U warehouse" --health-interval 5s --health-timeout 5s --health-retries 10
+    env:
+      PG_HOST: localhost
+      STORAGE_BACKEND: local
+      API_BASE_URL: http://localhost:8000
+      DBT_PROFILES_DIR: ${{ github.workspace }}/dbt
+      PYTHONPATH: ${{ github.workspace }}/src
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: {python-version: "3.11", cache: pip}
+      - run: pip install -r requirements-dev.txt
+      - name: Integration tests (ingestion, idempotency, incremental)
+        run: ALLOW_DESTRUCTIVE_TESTS=1 pytest -q -m integration
+      - name: Start mock API
+        run: nohup python -m retail_pipeline.mock_api > mock_api.log 2>&1 &
+      - name: Full pipeline on synthetic data (ingest -> dbt build with data-quality tests)
+        run: DEMO_DAYS=20 scripts/demo.sh
+      - name: Upload sample report
+        uses: actions/upload-artifact@v4
+        with: {name: reports, path: reports/}
+
+  docker-build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: docker compose build pipeline airflow
+      - run: docker compose config -q

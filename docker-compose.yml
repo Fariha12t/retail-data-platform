@@ -1,0 +1,106 @@
+# Local "cloud": Postgres (warehouse + Airflow metadata), MinIO (S3-compatible raw layer),
+# a mock marketing REST API, Airflow and the Streamlit dashboard.
+x-pipeline-env: &pipeline-env
+  PG_HOST: postgres
+  PG_PORT: "5432"
+  PG_DB: warehouse
+  PG_USER: warehouse
+  PG_PASSWORD: warehouse
+  STORAGE_BACKEND: s3
+  S3_BUCKET: retail-raw
+  S3_ENDPOINT_URL: http://minio:9000
+  AWS_ACCESS_KEY_ID: minioadmin
+  AWS_SECRET_ACCESS_KEY: minioadmin
+  AWS_DEFAULT_REGION: ap-south-1
+  API_BASE_URL: http://mock-api:8000
+  LANDING_DIR: /opt/pipeline/data/landing
+  REPORTS_DIR: /opt/pipeline/reports
+  SOURCE_HISTORY_START: ${SOURCE_HISTORY_START:-2024-01-01}
+  SLACK_WEBHOOK_URL: ${SLACK_WEBHOOK_URL:-}
+
+services:
+  postgres:
+    image: postgres:16
+    environment:
+      POSTGRES_USER: warehouse
+      POSTGRES_PASSWORD: warehouse
+      POSTGRES_DB: warehouse
+    ports: ["5432:5432"]
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      - ./docker/initdb:/docker-entrypoint-initdb.d:ro
+      - ./sql/init:/sql/init:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U warehouse -d warehouse"]
+      interval: 5s
+      retries: 20
+
+  minio:
+    image: minio/minio:latest
+    command: server /data --console-address ":9001"
+    environment: {MINIO_ROOT_USER: minioadmin, MINIO_ROOT_PASSWORD: minioadmin}
+    ports: ["9000:9000", "9001:9001"]
+    volumes: [miniodata:/data]
+
+  minio-init:
+    image: minio/mc:latest
+    depends_on: [minio]
+    entrypoint: >
+      /bin/sh -c "until mc alias set local http://minio:9000 minioadmin minioadmin; do sleep 2; done;
+      mc mb --ignore-existing local/retail-raw"
+
+  mock-api:
+    build: .
+    command: python -m retail_pipeline.mock_api
+    environment: {PORT: "8000", MOCK_API_FLAKY: "0.1"}
+    ports: ["8000:8000"]
+
+  airflow:
+    build: {context: ., dockerfile: Dockerfile.airflow}
+    depends_on:
+      postgres: {condition: service_healthy}
+    environment:
+      <<: *pipeline-env
+      AIRFLOW__CORE__EXECUTOR: LocalExecutor
+      AIRFLOW__CORE__LOAD_EXAMPLES: "false"
+      AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: postgresql+psycopg2://warehouse:warehouse@postgres:5432/airflow
+    command: >
+      bash -c "airflow db migrate &&
+      airflow users create --username admin --password admin --firstname a --lastname b --role Admin --email admin@example.com || true;
+      airflow scheduler & exec airflow webserver"
+    ports: ["8080:8080"]
+    volumes:
+      - ./airflow/dags:/opt/airflow/dags
+      - ./src:/opt/pipeline/src
+      - ./sql:/opt/pipeline/sql
+      - ./dbt:/opt/pipeline/dbt
+      - ./data:/opt/pipeline/data
+      - ./reports:/opt/pipeline/reports
+
+  # Utility container: docker compose run --rm pipeline python -m retail_pipeline.cli seed --days 60
+  pipeline:
+    build: .
+    profiles: ["tools"]
+    depends_on:
+      postgres: {condition: service_healthy}
+    environment:
+      <<: *pipeline-env
+      PYTHONPATH: /opt/pipeline/src
+      DBT_PROFILES_DIR: /opt/pipeline/dbt
+    working_dir: /opt/pipeline
+    volumes:
+      - ./:/opt/pipeline
+
+  dashboard:
+    build: .
+    profiles: ["dashboard"]
+    command: streamlit run dashboard/app.py --server.address 0.0.0.0 --server.port 8501
+    depends_on:
+      postgres: {condition: service_healthy}
+    environment: *pipeline-env
+    ports: ["8501:8501"]
+    volumes: ["./:/app"]
+
+volumes:
+  pgdata:
+  miniodata:

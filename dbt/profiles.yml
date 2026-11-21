@@ -1,0 +1,24 @@
+# Connection settings come from environment variables (see ../.env.example).
+# Default target is PostgreSQL. A BigQuery output is included as the cloud-warehouse option:
+# install dbt-bigquery and run `dbt build --target bigquery` (SQL uses cross-database macros where
+# possible; generate_series in dim_date and a few Postgres functions would need small adaptations).
+retail_dw:
+  target: "{{ env_var('DBT_TARGET', 'postgres') }}"
+  outputs:
+    postgres:
+      type: postgres
+      host: "{{ env_var('PG_HOST', 'localhost') }}"
+      port: "{{ env_var('PG_PORT', '5432') | as_number }}"
+      user: "{{ env_var('PG_USER', 'warehouse') }}"
+      password: "{{ env_var('PG_PASSWORD', 'warehouse') }}"
+      dbname: "{{ env_var('PG_DB', 'warehouse') }}"
+      schema: public
+      threads: 4
+    bigquery:
+      type: bigquery
+      method: service-account
+      project: "{{ env_var('BQ_PROJECT', 'my-gcp-project') }}"
+      dataset: "{{ env_var('BQ_DATASET', 'retail_dw') }}"
+      keyfile: "{{ env_var('BQ_KEYFILE', '/secrets/bq.json') }}"
+      location: "{{ env_var('BQ_LOCATION', 'asia-south1') }}"
+      threads: 4

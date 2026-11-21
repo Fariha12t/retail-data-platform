@@ -1,0 +1,86 @@
+version: 2
+models:
+- name: dim_customer
+  description: SCD Type 2 customer dimension - one row per customer version (valid_from / valid_to / is_current).
+  columns:
+  - name: customer_key
+    description: Surrogate key (hash of customer_id + version start).
+    tests: [unique, not_null]
+  - name: customer_id
+    tests: [not_null]
+  - name: is_current
+    tests: [not_null]
+- name: dim_product
+  description: SCD Type 2 product dimension with price and cost history.
+  columns:
+  - name: product_key
+    tests: [unique, not_null]
+  - name: product_id
+    tests: [not_null]
+- name: dim_date
+  description: Calendar dimension (2024-2028).
+  columns:
+  - name: date_day
+    tests: [unique, not_null]
+- name: fact_order_items
+  description: Fact table, grain = order line. Dimension keys are resolved as of order time.
+  columns:
+  - name: order_item_id
+    tests: [unique, not_null]
+  - name: customer_key
+    tests:
+    - not_null
+    - relationships:
+        arguments: {to: ref('dim_customer'), field: customer_key}
+  - name: product_key
+    tests:
+    - not_null
+    - relationships:
+        arguments: {to: ref('dim_product'), field: product_key}
+  - name: order_date
+    tests:
+    - relationships:
+        arguments: {to: ref('dim_date'), field: date_day}
+  - name: net_amount
+    tests: [non_negative]
+- name: fact_orders
+  description: Fact table, grain = order.
+  columns:
+  - name: order_id
+    tests: [unique, not_null]
+- name: fact_payments
+  description: Fact table, grain = payment transaction.
+  columns:
+  - name: payment_id
+    tests: [unique, not_null]
+- name: fact_inventory_daily
+  description: Fact table, grain = product x warehouse x day.
+  columns:
+  - name: product_key
+    tests:
+    - relationships:
+        arguments: {to: ref('dim_product'), field: product_key}
+- {name: fact_marketing_spend_daily, description: 'Fact table, grain = campaign x day.'}
+- name: rpt_daily_revenue
+  description: Reporting table behind the daily revenue report and the Power BI revenue page.
+  columns:
+  - name: order_date
+    tests: [unique, not_null]
+  - name: net_revenue
+    tests: [non_negative]
+- name: rpt_inventory_status
+  description: Latest stock position with days of cover and stock status.
+  columns:
+  - name: product_id
+    tests: [unique, not_null]
+  - name: stock_status
+    tests:
+    - accepted_values:
+        arguments:
+          values: [out_of_stock, below_reorder, low_cover, healthy]
+- {name: rpt_marketing_performance, description: 'Spend vs attributed revenue (ROAS, CPC, cost per order) by channel and day.'}
+- name: rpt_product_performance
+  description: Lifetime and last-30-day performance per current product.
+  columns:
+  - name: product_id
+    tests: [unique, not_null]
