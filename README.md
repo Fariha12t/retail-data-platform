@@ -1,4 +1,5 @@
-<img width="1912" height="843" alt="Screenshot 2026-11-22 114323" src="https://github.com/user-attachments/assets/7c6c9e0c-0a62-4fd5-9570-f140db2daf35" /># Retail Data Platform: End-to-End Data Warehouse & Automated Reporting
+
+# Retail Data Platform: End-to-End Data Warehouse & Automated Reporting
 
 A complete, runnable data platform that replaces "analysts download CSVs and build reports by hand" with an
 automated, tested, observable pipeline: **sources -> ingestion -> raw layer (S3) -> dbt transformations -> star-schema warehouse -> reports & dashboards**.
@@ -120,6 +121,9 @@ tests/                 unit tests + integration test (Postgres)
 
 ### Sales
 ![Net revenue](docs/screenshots/01-sales%20net%20revenue.png)
+
+<img width="1912" height="843" alt="Screenshot 2026-11-22 114323" src="https://github.com/user-attachments/assets/f967b672-fd19-40f4-8ee3-c3f94ae74ddd" />
+
 ![Revenue by category and top products](docs/screenshots/01-sales%20revenue.png)
 
 ### Marketing
