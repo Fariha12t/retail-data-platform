@@ -116,17 +116,30 @@ tests/                 unit tests + integration test (Postgres)
 * **Airflow isolation.** Airflow only schedules; work runs in a separate virtualenv via the CLI, so every task is reproducible locally.
 * **Honest simulation.** Source data is synthetic (with intentional duplicates, negative amounts, malformed emails, `N/A` stock values, API failures) so you can *see* the safeguards work.
 
+## Screenshots
+
+### Sales
+![Net revenue](docs/screenshots/01-sales%20net%20revenue.png)
+![Revenue by category and top products](docs/screenshots/01-sales%20revenue.png)
+
+### Marketing
+![Marketing spend vs revenue](docs/screenshots/02-marketing%20a.png)
+![Marketing channel table and ROAS](docs/screenshots/02-marketing%20b.png)
+
+### Inventory
+![Inventory status](docs/screenshots/03-inventory.png)
+
+### Pipeline health, SCD2 and cost
+![Pipeline health table](docs/screenshots/04-pipeline-health%20a.png)
+![Pipeline health detail](docs/screenshots/04-pipeline-health%20b.png)
+![SCD2 customer versions and cost](docs/screenshots/04-pipeline-health%20c.png)
+
 ## What was verified
 The full flow (`make demo`: seed, initial load, 3 incremental days with SCD2 changes, `dbt build` with all tests, reports, freshness, cost, reconciliation),
 the 39 unit tests, the 3 integration tests and the Streamlit app were run against PostgreSQL 16 with dbt-postgres 1.9+/pandas 3.
 **Not run here:** the Docker Compose stack, Airflow itself (DAG files are syntax-checked), Terraform, GitHub Actions, and BigQuery/Redshift targets.
 Expect to fix small environment-specific things on first run of those. Power BI cannot be shipped as code, so [docs/POWERBI.md](docs/POWERBI.md) gives the exact model, measures and layout.
 
-## Resume bullets (edit to match what you actually did)
-* Built an end-to-end data platform (Python, Airflow, dbt, PostgreSQL, S3) ingesting 3 source types into a star-schema warehouse with automated daily/weekly reporting.
-* Implemented incremental, idempotent loads with watermarks, schema-drift detection and row-level quarantine; reduced manual report prep to zero-touch scheduled runs.
-* Modelled SCD Type 2 customer/product dimensions with point-in-time fact joins; wrote 60 dbt tests and 39 pytest unit tests; CI on GitHub Actions.
-* Added observability (audit tables, freshness checks, Slack alerts) and cloud cost monitoring with Terraform-managed S3 lifecycle policies.
 
-## License
-MIT
+
+
