@@ -87,6 +87,11 @@ Open `reports/daily_revenue_<date>.html`. A sample is in [docs/sample_output](do
 
 No Docker? Run Postgres yourself, set `STORAGE_BACKEND=local` in `.env`, and start the mock API with `make api` in a second terminal.
 
+**Windows without Docker:** install PostgreSQL, create user/database `warehouse`,
+set `STORAGE_BACKEND=local` in `.env`, run `pip install -e .`, start the mock API
+(`python -m retail_pipeline.mock_api`) in one terminal, and run `bash scripts/demo.sh`
+from **Git Bash** in another.
+
 Run Airflow too: `docker compose up -d --build` then open http://localhost:8080 (user `admin`, password `admin`).
 Set `SOURCE_HISTORY_START` in `.env` to the date printed by `make demo`'s seed step so the API/inventory first load starts from your data.
 
