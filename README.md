@@ -126,17 +126,30 @@ tests/                 unit tests + integration test (Postgres)
 
 ![Revenue by category and top products](docs/screenshots/01-sales%20revenue.png)
 
+<img width="1902" height="798" alt="image" src="https://github.com/user-attachments/assets/2d6e2173-301f-4971-bb63-06d622ed9b17" />
+
 ### Marketing
 ![Marketing spend vs revenue](docs/screenshots/02-marketing%20a.png)
+<img width="1881" height="815" alt="image" src="https://github.com/user-attachments/assets/1029312e-6d35-4df3-904f-c2fcf3064702" />
+
 ![Marketing channel table and ROAS](docs/screenshots/02-marketing%20b.png)
+<img width="1882" height="832" alt="image" src="https://github.com/user-attachments/assets/9cb96e06-a3ed-4aaa-bbae-60ee0b06558a" />
 
 ### Inventory
 ![Inventory status](docs/screenshots/03-inventory.png)
+<img width="1842" height="775" alt="image" src="https://github.com/user-attachments/assets/caf6df6a-796f-41f9-8020-632ce18d8b1f" />
+
 
 ### Pipeline health, SCD2 and cost
 ![Pipeline health table](docs/screenshots/04-pipeline-health%20a.png)
+<img width="1857" height="667" alt="image" src="https://github.com/user-attachments/assets/3ffaab07-0655-40bd-9d88-03b9da4ff39a" />
+
 ![Pipeline health detail](docs/screenshots/04-pipeline-health%20b.png)
+<img width="1887" height="792" alt="image" src="https://github.com/user-attachments/assets/e393e1f3-0955-4666-b836-99856a1b3249" />
+
 ![SCD2 customer versions and cost](docs/screenshots/04-pipeline-health%20c.png)
+<img width="1857" height="685" alt="image" src="https://github.com/user-attachments/assets/cd241fe7-e322-4d33-b361-5abf21727f97" />
+
 
 ## What was verified
 The full flow (`make demo`: seed, initial load, 3 incremental days with SCD2 changes, `dbt build` with all tests, reports, freshness, cost, reconciliation),
